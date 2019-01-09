@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html ng-app="myApp" lang="en">
+<head>
+  <title>Loan Calculator</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.3/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.5.0/Chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-messages/1.6.3/angular-messages.min.js"></script>
+  <script src="https://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-2.5.0.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/angular-chart.js/1.1.1/angular-chart.min.js"></script>
+  <script src="js/app.js"></script>
+
+  <style>
+    .btn {
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
+    .messages-padding {
+      margin-top: 5px;
+      margin-bottom: 5px;
+    }
+
+    .padding {
+      margin-top: 20px;
+    }
+
+    .charts {
+      width: 250px;
+      height: 250px;
+    }
+
+    .errors {
+      color: red;
+    }
+  </style>
+</head>
+
+<body data-ng-cloak="">
+
+<div id="parent" ng-controller="loanCtrl">
+
+  <div class="container">
+    <h1>Loan Calculator</h1>
+    <div class="row">
+    <p>Loan calculator with fixed monthly repayment amount, and monthly interest calculation. This tool provides a general loan plan, where banks/other lenders might have a slightly different formula.</p>
+    <p><b>Extra Monthly repayment option</b> will deduce from loan principal directly (no interest paid), not reducing the monthly fee - therefore shortening loan repayment duration.</p>
+    <p><b>Rent vs Loan option</b> compares if buying and reselling property at a later date is financially more viable than renting and saving capital (amount to save matches the loan expense).</p>
+    <p><i>Mouse-over the input fields for more information.</i></p>
+      <form name="myPlan" novalidate>
+        <div class="col-sm-6">
+          <div>
+	    <div class="messages-padding" ng-messages="myPlan.myPropertyValue.$error">
+              Property Value: <br>
+              <input class="form-control" type="number" name="myPropertyValue" ng-model="input.pValue" min="{{input.principal}}" required ng-required="true" popover-placement="top" uib-popover="Enter Property Value, must be equal or higher to Loan Amount." popover-trigger="'mouseenter'">
+	      <span class="errors" ng-message="min">Must match or exceed loan amount.</span>
+              <div ng-messages-include="messages.html"></div>
+	    </div>
+	    <div class="messages-padding" ng-messages="myPlan.myPrincipal.$error">
+              Loan Amount: <br>
+              <input class="form-control" type="number" name="myPrincipal" ng-model="input.principal" min="1" required popover-placement="top" uib-popover="Enter the amount you wish to loan." popover-trigger="'mouseenter'">
+	      <div ng-messages-include="messages.html"></div>
+            </div>
+	    <div class="messages-padding" ng-messages="myPlan.myRate.$error">
+              Interest Rate: <br>
+              <input class="form-control" type="number" name="myRate" ng-model="input.rate" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/" min="0.1" max ="100" step="0.01" required popover-placement="top" uib-popover="Enter Interest rate (eg.: 2, 2.8, 3.6)." popover-trigger="'mouseenter'">
+	      <div ng-messages-include="messages.html"></div>
+	    </div>
+	    <div class="messages-padding" ng-messages="myPlan.myDuration.$error">
+              Loan Duration, in years: <br>
+              <input class="form-control" type="number" name="myDuration" ng-model="input.duration" min="1" max ="50" required popover-placement="top" uib-popover="Enter Loan Duration, in years." popover-trigger="'mouseenter'">
+	      <div ng-messages-include="messages.html"></div>
+            </div>
+	    <div class="messages-padding" ng-messages="myPlan.myExtra.$error">
+              Extra Monthly repayment: <br>
+              <input class="form-control" type="number" name="myExtra" ng-model="input.extra" min="0" required popover-placement="top" uib-popover="Enter extra monthly repayment. The amount repays the loan principal directly, without interest." popover-trigger="'mouseenter'">
+	      <div ng-messages-include="messages.html"></div>
+	    </div>
+            <br>
+	    <div class="checkbox">
+	      <label>
+                <input type="checkbox" ng-model="calculateRentVsLoan">
+		Check for a Loan vs Rent comparison
+	      </label>
+	    </div>
+            <br><br>
+          </div>
+        </div>
+        <div class="col-sm-6">
+          <div ng-show="calculateRentVsLoan">
+	    <div class="messages-padding" ng-messages="myPlan.myRent.$error">
+              Monthly Rent expense: <br>
+              <input class="form-control" type="number" name="myRent" ng-model="input.rent" min="0" required popover-placement="top" uib-popover="Enter monthly Rent expense." popover-trigger="'mouseenter'">
+	      <div ng-messages-include="messages.html"></div>
+	    </div>
+	    <div class="messages-padding" ng-messages="myPlan.myResellAfter.$error">
+              Rent Duration / Resell Property, in years: <br>
+              <input class="form-control" type="number" name="myResellAfter" ng-model="input.resellAfter" min="0" required popover-placement="top" uib-popover="Enter projected years, when would you resell the property. Same duration goes for rent calculations." popover-trigger="'mouseenter'">
+              <div ng-messages-include="messages.html"></div>
+            </div>
+	    <div class="messages-padding" ng-messages="myPlan.myResellValue.$error">
+              Property Resell value: <br>
+              <input class="form-control" type="number" name="myResellValue" ng-model="input.resell" min="0" required popover-placement="top" uib-popover="Enter the estimated property value, when reselling." popover-trigger="'mouseenter'">
+	      <div ng-messages-include="messages.html"></div>
+            </div>
+            <div class="messages-padding" ng-messages="myPlan.myExpenses.$error">
+              Extra Monthly Expenses, if property owner: <br>
+              <input class="form-control" type="number" name="myExpenses" ng-model="input.expenses" min="0" required popover-placement="top" uib-popover="Enter the extra monthly expenses you expect if owing a property (eg.: reserve fund, maintenance, taxes etc). This are the expenses you would not have if renting." popover-trigger="'mouseenter'">
+              <div ng-messages-include="messages.html"></div>
+            </div>
+            <div class="messages-padding" ng-messages="myPlan.mySellTax.$error">
+              Property Sale Tax percentage: <br>
+              <input class="form-control" type="number" name="mySellTax" ng-model="input.tax" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/" min="0.0" max ="100" step="0.01" required popover-placement="top" uib-popover="Enter your country's property sale tax." popover-trigger="'mouseenter'">
+              <div ng-messages-include="messages.html"></div>
+            </div>
+	    <div class="messages-padding" ng-messages="myPlan.myGainTax.$error">
+              Capital Gains Tax percentage: <br>
+              <input class="form-control" type="number" name="myGainTax" ng-model="input.gainTax" ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/" min="0.0" max ="100" step="0.01" required popover-placement="top" uib-popover="Enter your country's capital gains tax. This tax will apply only if resell value exceeds the previous purchase value." popover-trigger="'mouseenter'">
+              <div ng-messages-include="messages.html"></div>
+	    </div>
+          </div>
+          <br><br>
+        </div>
+    </form>
+  </div>
+  <button class="btn btn-primary" ng-disabled="myPlan.$invalid" ng-click="calculate()">Calculate</button>
+
+  <div ng-show="calculateClicked">
+    <div class="row bg-success">
+      <div class="col-sm-6">
+        <div>
+          <h3>Loan Calculation Results</h3>
+          <p><b>Own Capital:</b> {{loanResults.initialCapital | number : 2}}</p>
+          <p><b>Loan Amount (Principal):</b> {{loanResults.principal | number : 2}}</p>
+          <p><b>Loan Amount (Principal, with Interest):</b> {{loanResults.withInterest | number : 2}}</p>
+          <p><b>Loan Duration (in months):</b> {{loanResults.duration }}</p>
+          <p><b>Estimated Total Interest Paid:</b> {{loanResults.paidInterest | number : 2}}</p>
+          <p><b>Estimated Monthly Payment:</b> {{loanResults.monthlyPayment | number : 2}}</p>
+          <p><b>Extra Payment:</b> {{loanResults.totalExtraMonthlyPayment | number : 2}}</p>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div ng-show="showRentVsLoan">
+          <h3>Rent Comparison Results</h3>
+          <p><b>Rent Paid:</b> {{rentCompare.totalRent | number : 2}}</p>
+          <p><b>Amount of capital, if renting and saving:</b> {{rentCompare.saveWhileRenting | number : 2}}</p>
+          <br>
+          <p><b>Loan Interest Paid (to date):</b> {{rentCompare.interestPaidSoFar | number : 2}}</p>
+          <p><b>Loan Principal Paid (to date):</b> {{rentCompare.principalPaidSoFar | number : 2}}</p>
+          <p><b>Estimated Extra Expenses (if property owner):</b> {{rentCompare.extraExpensesIfOwner | number : 2}}</p>
+          <p><b>Estimated Property Resell Value:</b> {{rentCompare.propertyResellValue | number : 2}}</p>
+          <p><b>Property Sale Tax Amount:</b> {{rentCompare.saleTaxAmount | number : 2}}</p>
+          <p><b>Capital Gains Tax Amount:</b> {{rentCompare.gainsTaxAmount | number : 2}}</p>
+          <p><b>Amount of capital, if reselling property:</b> {{rentCompare.capitalAfterResell | number : 2}}</p>
+          <br>
+        </div>
+      </div>
+    </div>
+      <div class="row bg-success">
+        <div class="col-sm-6">
+          <h4>Chart representing capital distribution</h4>
+          <div class="charts">
+            <canvas id="loan" class="chart chart-pie" chart-data="loanChartData" chart-labels="loanChartLabels" chart-options="options"</canvas>
+          </div>
+          <p>The chart shows how is the capital distributed, between principal, interest (loan) and own starting capital.</p>
+          <p><b><i>Principal</b></i> is the loan amount.</p>
+          <p><b><i>Interest</b></i> is the fee paid according to loan amount (principal), loan duration and interest rate.</p>
+          <p><b><i>Own Capital</b></i> is calculated from the difference between property value and loan amount.</p>
+        </div>
+        <div class="col-sm-6" ng-show="showRentVsLoan">
+          <h4>Chart representing Loan vs Rent comparison</h4>
+          <div class="charts">
+            <canvas id="rent" class="chart chart-pie" chart-data="rentChartData" chart-labels="rentChartLabels" chart-options="options"</canvas>
+          </div>
+          <p>The chart shows which option has a better capital net gain.</p>
+          <p><b><i>Buy & Resell:</i></b> Planning to buy and then resell the property later on. Note that property owners usually have more monthly/yearly expenses than renters.</p>
+          <p>Property sale tax and Capital gain tax must also be taken into account. Later one applies only if property sold for more than it was acquired for, and only for the exceeding amount.</p>
+          <p><b><i>Rent & Save:</i></b> Planning to rent and save, before buying a property at a later date. Assuming the same amount of capital that would go for a loan, (minus the rent) is saved.</p>
+          <p>The purpose of this comparison is to determine, which option is better in case of planned move/immigration or not (yet) having enough capital to buy a desired property, instead opting for a temporary one.</p>
+        </div>
+      </div>
+
+      <div class="padding row bg-warning">
+        <h3>Amortization plan</h3>
+        <p>Estimation of loan balance and monthly payment distribution (principal, interest), including optional monthly extra payment.</p>
+	<ul uib-pagination total-items="pagTotalItems" ng-model="pagCurrentPage" max-size="pagMaxSize" class="pagination-sm" boundary-links="true" rotate="false" num-pages="pagNumPages" items-per-page="pagItemsPerPage"></ul>
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered">
+            <thead style="font-weight:bold;">
+            <tr>
+              <td>Month</td>
+              <td>Loan Balance</td>
+              <td>Principal (+ Extra Payment)</td>
+              <td>Interest</td>
+              <td>Monthly Payment (+ Extra Payment)</td>
+              <td>New Loan Balance</td>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="x in loanAmortization.slice(((pagCurrentPage-1)*pagItemsPerPage), ((pagCurrentPage)*pagItemsPerPage))">
+              <td>{{::x.month}}</td>
+              <td>{{::x.fullPrincipal | number : 2}}</td>
+              <td>{{::x.monthlyPrincipal | number : 2}} (+{{::x.extraMonthlyPayment | number : 2}})</td>
+              <td>{{::x.interest | number : 2}}</td>
+              <td>{{::x.monthlyPayment | number : 2}} (+{{::x.extraMonthlyPayment | number : 2}})</td>
+              <td>{{::x.newPrincipal | number : 2}}</td>
+            </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+  </div>
+</div>
+</div>
+</body>
+</html>
+
